@@ -1,0 +1,26 @@
+# Local build + run. On Apple Silicon / arm64, start an x86_64 Docker first:
+#   colima start --arch x86_64 --vm-type=qemu --cpu 4 --memory 8 --disk 60
+# then: docker compose up --build -d   (first boot installs MT5 in Wine, a few min)
+# VNC:  http://localhost:3000   (log into your DEMO account by hand)
+# bridge rpyc: localhost:8001
+services:
+  mt5:
+    build: .
+    # Published image (set to your Docker Hub namespace before `docker compose push`).
+    image: apeyron/mt5-docker-silicon:latest
+    container_name: mt5
+    platform: linux/amd64
+    volumes:
+      - ./config:/config          # wineprefix + MT5 install + demo login persist here
+    ports:
+      - 3000:3000                 # KasmVNC web (manual demo login)
+      - 8001:8001                 # rpyc bridge (host client connects here)
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ss -tuln | grep -q ':8001' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 300s          # first boot installs Wine deps; be patient
