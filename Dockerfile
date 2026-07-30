@@ -27,7 +27,15 @@ RUN apt-get update \
     && wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources \
     && dpkg --add-architecture i386 \
     && apt-get update \
-    && apt-get install --install-recommends -y winehq-stable \
+    # Wine PINNED to 10.0 on purpose. Wine 11.0 (current winehq-stable) makes the
+    # MetaTrader5 installer abort with "A debugger has been found running in your
+    # system" — a MetaQuotes anti-debug false-positive that regressed on Wine 11.
+    # Verified: 10.0 installs MT5 cleanly under the same QEMU VM, 11.0 does not.
+    && apt-get install --install-recommends -y \
+        winehq-stable=10.0.0.0~bookworm-1 \
+        wine-stable=10.0.0.0~bookworm-1 \
+        wine-stable-amd64=10.0.0.0~bookworm-1 \
+        wine-stable-i386=10.0.0.0~bookworm-1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /etc/apt/keyrings/winehq-archive.key
 

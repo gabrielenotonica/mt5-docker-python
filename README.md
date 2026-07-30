@@ -55,7 +55,8 @@ Your host only needs a matching rpyc: `pip install "rpyc==6.0.2"`.
 | Windows Python | `3.11.9` | has a MetaTrader5 wheel |
 | Wine Mono | `10.3.0` | |
 | MT5 terminal | latest MetaQuotes build | |
-| base image | `ghcr.io/linuxserver/baseimage-kasmvnc:debianbookworm` + `winehq-stable` | |
+| Wine | `winehq-stable=10.0.0.0~bookworm-1` | **not 11** — Wine 11 trips the MT5 installer's anti-debug ("A debugger has been found") |
+| base image | `ghcr.io/linuxserver/baseimage-kasmvnc:debianbookworm` | |
 
 Bump them together in `Metatrader/start.sh`; the boot-time import check fails loudly if a combination is ABI-incompatible.
 

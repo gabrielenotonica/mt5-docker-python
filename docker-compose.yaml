@@ -17,6 +17,14 @@ services:
       - 8001:8001                 # rpyc bridge (host client connects here)
     env_file:
       - .env
+    # Wine needs ptrace to manage its own processes; without it Wine falls back to
+    # methods MetaQuotes' installer flags as "a debugger has been found running in
+    # your system" and aborts. seccomp:unconfined lets those syscalls through.
+    # Required to install/run MT5 under Wine (esp. under QEMU emulation).
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "ss -tuln | grep -q ':8001' || exit 1"]
