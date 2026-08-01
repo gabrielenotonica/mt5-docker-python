@@ -1,0 +1,35 @@
+# Second MT5 instance, for running a second broker account alongside the first.
+#
+#   docker compose -f docker-compose.second.yaml -p mt5-second up -d
+#
+# VNC:    http://localhost:3010
+# bridge: localhost:8011
+#
+# ./config2 is a copy of ./config, so MT5 is already installed — log the terminal
+# into the *second* account by hand on first start.
+services:
+  mt5-2:
+    image: gabrielenotonica/mt5-docker-python:latest
+    container_name: mt5-2
+    platform: linux/amd64
+    volumes:
+      - ./config2:/config
+    # Loopback-only, same reasoning as the primary instance: the rpyc bridge is
+    # remote code execution against a terminal logged into a real account.
+    ports:
+      - 127.0.0.1:3010:3000       # KasmVNC web UI
+      - 127.0.0.1:5902:6901       # raw RFB (native VNC client, bypasses the web UI)
+      - 127.0.0.1:8011:8001       # rpyc bridge
+    env_file:
+      - .env
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ss -tuln | grep -q ':8001' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 300s

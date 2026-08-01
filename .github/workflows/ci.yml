@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck
+        run: shellcheck mt5/entrypoint.sh
+
+      - name: Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          # DL3008: we pin Wine explicitly and deliberately leave the base tooling
+          # to the Debian release; pinning every apt package here buys nothing and
+          # rots fast.
+          ignore: DL3008
+
+      - name: Validate compose files
+        run: |
+          docker compose -f docker-compose.yaml config -q
+          docker compose -f docker-compose.yaml -f docker-compose.build.yaml config -q
+
+      - name: Byte-compile the bridge
+        run: python3 -m py_compile mt5/bridge.py
+
+  build:
+    name: Build image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Build only — publishing happens in docker-publish.yml on a tag.
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: mt5-docker-python:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # A boot smoke test, deliberately not a full provisioning test: installing
+      # MetaTrader and the Windows Python pulls ~hundreds of MB from third-party
+      # servers, which makes for a slow and flaky gate. What we assert here is
+      # that the image starts, the session autostart fires our entrypoint, and
+      # provisioning begins — the failures that a Dockerfile or path change
+      # actually causes.
+      - name: Smoke test
+        run: |
+          docker run -d --name smoke \
+            --cap-add SYS_PTRACE \
+            --security-opt seccomp=unconfined \
+            -e CUSTOM_USER=ci -e PASSWORD=ci \
+            mt5-docker-python:ci
+
+          for _ in $(seq 1 60); do
+            if docker logs smoke 2>&1 | grep -q 'initialising Wine prefix'; then
+              echo "entrypoint reached provisioning"
+              exit 0
+            fi
+            if ! docker ps --filter name=smoke --filter status=running -q | grep -q .; then
+              echo "container exited early"
+              docker logs smoke
+              exit 1
+            fi
+            sleep 5
+          done
+
+          echo "entrypoint never reached provisioning within 5 minutes"
+          docker logs smoke
+          exit 1
+
+      - name: Container logs
+        if: always()
+        run: docker logs smoke || true

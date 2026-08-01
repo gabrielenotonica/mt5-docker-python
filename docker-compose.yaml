@@ -1,26 +1,30 @@
-# Local build + run. On Apple Silicon / arm64, start an x86_64 Docker first:
+# Runs the published image. On Apple Silicon, start an x86_64 Docker first:
 #   colima start --arch x86_64 --vm-type=qemu --cpu 4 --memory 8 --disk 60
-# then: docker compose up --build -d   (first boot installs MT5 in Wine, a few min)
-# VNC:  http://localhost:3000   (log into your DEMO account by hand)
-# bridge rpyc: localhost:8001
+# then: docker compose up -d      (first boot installs MT5 in Wine — a few minutes)
+#
+# VNC:    http://localhost:3000   (log into your account by hand)
+# bridge: localhost:8001          (rpyc)
+#
+# To build the image yourself instead of pulling it, overlay docker-compose.build.yaml.
 services:
   mt5:
-    build: .
-    # Published image (set to your Docker Hub namespace before `docker compose push`).
-    image: apeyron/mt5-docker-silicon:latest
+    image: gabrielenotonica/mt5-docker-python:latest
     container_name: mt5
     platform: linux/amd64
     volumes:
-      - ./config:/config          # wineprefix + MT5 install + demo login persist here
+      - ./config:/config          # wineprefix + MT5 install + login persist here
+    # Both ports are bound to the loopback interface on purpose — see the Security
+    # section of the README. The rpyc bridge in particular grants a client full
+    # code execution inside the container, against a terminal logged into a real
+    # trading account. Do not widen these bindings.
     ports:
-      - 3000:3000                 # KasmVNC web (manual demo login)
-      - 8001:8001                 # rpyc bridge (host client connects here)
+      - 127.0.0.1:3000:3000       # KasmVNC web UI
+      - 127.0.0.1:8001:8001       # rpyc bridge (host client connects here)
     env_file:
       - .env
-    # Wine needs ptrace to manage its own processes; without it Wine falls back to
-    # methods MetaQuotes' installer flags as "a debugger has been found running in
-    # your system" and aborts. seccomp:unconfined lets those syscalls through.
-    # Required to install/run MT5 under Wine (esp. under QEMU emulation).
+    # Wine needs ptrace to manage its own processes. Without it, it falls back to
+    # mechanisms the MetaTrader installer reports as "a debugger has been found
+    # running in your system", and the install aborts.
     cap_add:
       - SYS_PTRACE
     security_opt:
@@ -31,4 +35,4 @@ services:
       interval: 30s
       timeout: 5s
       retries: 10
-      start_period: 300s          # first boot installs Wine deps; be patient
+      start_period: 300s          # first boot provisions Wine; be patient

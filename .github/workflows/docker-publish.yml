@@ -1,38 +1,70 @@
-name: Build and Publish Docker Image
+name: Publish image
 
-# Publishes on a pushed tag (e.g. v1.0.0) or manual dispatch.
-# Requires repo secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN.
-# Set IMAGE_NAME to your Docker Hub namespace/repo.
+# Publishes on a version tag (v1.2.3) or on demand.
+#
+# GHCR needs no setup — it authenticates with the built-in GITHUB_TOKEN.
+# Docker Hub is optional: set the DOCKERHUB_USERNAME and DOCKERHUB_TOKEN repository
+# secrets to enable it. Without them the job publishes to GHCR alone rather than
+# failing, so a fork does not need any secrets to cut a release.
 on:
   push:
     tags:
-      - "*"
+      - "v*"
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag (e.g. v1.0.0)"
+        description: "Tag to build (e.g. v1.0.0)"
         required: true
         type: string
 
 env:
-  IMAGE_NAME: apeyron/mt5-docker-silicon
+  IMAGE_NAME: mt5-docker-python
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  build-and-push:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
+      - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
 
+      # The Docker Hub namespace comes from the secret rather than being hardcoded,
+      # so a fork publishes under its own account by setting two secrets and
+      # nothing else. The fallback namespace keeps the metadata string well-formed
+      # when the secrets are absent; `enabled=false` is what actually suppresses it.
+      - name: Check for Docker Hub credentials
+        id: dockerhub
+        env:
+          USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          FALLBACK: ${{ github.repository_owner }}
+        run: |
+          if [ -n "$USERNAME" ] && [ -n "$TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "namespace=$USERNAME" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "namespace=$FALLBACK" >> "$GITHUB_OUTPUT"
+            echo "::notice::Docker Hub secrets not set — publishing to GHCR only."
+          fi
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Log in to Docker Hub
+        if: steps.dockerhub.outputs.enabled == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -42,19 +74,27 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: |
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+            name=docker.io/${{ steps.dockerhub.outputs.namespace }}/${{ env.IMAGE_NAME }},enable=${{ steps.dockerhub.outputs.enabled }}
           tags: |
-            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
             type=raw,value=latest
-            type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event_name == 'workflow_dispatch' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
-          # MT5 + Wine are x86 only; the image is amd64. arm64 hosts run it via
-          # an x86_64 VM (Colima), see README.
+          # MetaTrader and Wine are x86 only, so the image is amd64. arm64 hosts
+          # run it inside an x86_64 VM — see the README.
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            BUILD_DATE=${{ github.event.repository.updated_at }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

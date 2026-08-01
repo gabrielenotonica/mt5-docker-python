@@ -1,0 +1,60 @@
+name: Bug report
+description: Something doesn't work
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Most container problems here are one of a handful of known things — the
+        [Troubleshooting](../../blob/main/README.md#troubleshooting) section covers
+        them and is usually faster than waiting for a reply.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        `docker compose logs mt5` from a fresh start. The entrypoint prefixes its
+        lines with `[mt5]` and says which provisioning step it reached — that line
+        is usually the whole answer.
+      render: shell
+    validations:
+      required: true
+
+  - type: dropdown
+    id: host
+    attributes:
+      label: Host
+      options:
+        - Apple Silicon Mac (Colima)
+        - Apple Silicon Mac (other)
+        - x86_64 Linux
+        - x86_64 macOS or Windows
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Image tag you're running, or the commit if you built it yourself.
+      placeholder: v0.1.0
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: fresh-config
+    attributes:
+      label: Checks
+      options:
+        - label: I tried again with an empty `./config` directory
+        - label: I am not exposing port 8001 beyond localhost

@@ -1,18 +1,20 @@
-"""Tiny MetaTrader5 bridge: an rpyc classic SlaveService, run under Wine's Python.
+"""MetaTrader 5 bridge: an rpyc classic SlaveService running under Wine's Python.
 
-The whole point of this project's fork: upstream (gmag11) shells out to the
-`mt5linux` package whose CLI drifts between releases (0.x had `-w`, 1.x removed
-it → the published image fails to start the server). We don't need it. A classic
-rpyc SlaveService exposes the remote interpreter, so a host client does:
+A classic SlaveService exposes this interpreter to a client, which is all that is
+needed to drive MetaTrader 5 from a non-Windows host:
 
     import rpyc
     conn = rpyc.classic.connect("localhost", 8001)
-    mt5 = conn.modules.MetaTrader5      # the Windows MetaTrader5, live
+    mt5 = conn.modules.MetaTrader5      # the live Windows MetaTrader5 module
     mt5.initialize(); mt5.account_info(); ...
 
-That is exactly what mt5linux generated internally, minus the fragile wrapper.
-Runs under Wine so `import MetaTrader5` binds to the terminal in the same prefix.
-Localhost/dev tool: SlaveService grants full remote access — do not expose :8001.
+Running it under Wine is what makes `import MetaTrader5` bind to the terminal in
+the same prefix. Wrapper libraries exist for this, but they add a CLI whose flags
+drift between releases and take the container down with them — thirty lines of
+rpyc have no such failure mode.
+
+SECURITY: a SlaveService client gets arbitrary code execution in this container,
+with access to the logged-in terminal. Bind it to localhost and keep it there.
 """
 
 import argparse

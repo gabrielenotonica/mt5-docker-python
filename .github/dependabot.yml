@@ -1,0 +1,18 @@
+version: 2
+updates:
+  # The Wine and Python pins live in the Dockerfile and mt5/entrypoint.sh and are
+  # deliberate — Dependabot does not track those, and it should not. This only
+  # keeps the CI actions and the base image current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: build

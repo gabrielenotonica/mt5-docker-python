@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/gabrielenotonica/mt5-docker-python/security/advisories/new
+    about: Report privately — please do not open a public issue.
+  - name: MetaTrader 5 itself
+    url: https://www.mql5.com/en/forum
+    about: Questions about the terminal, MQL5 or your broker belong upstream, not here.

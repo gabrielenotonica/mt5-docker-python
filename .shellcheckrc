@@ -1,0 +1,9 @@
+# Run the optional checks too, so style stays consistent rather than drifting.
+enable=all
+
+# SC2312 — "consider invoking this command separately to avoid masking its return
+# value". The two places this fires are capability probes of the form
+# `if some-command | grep -q ...`, where a failure of the left-hand side is a
+# legitimate answer: no output means not installed, which is exactly the branch we
+# want. Silencing it with `|| true` would add noise and say less.
+disable=SC2312

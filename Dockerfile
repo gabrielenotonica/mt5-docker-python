@@ -1,47 +1,67 @@
-# mt5-docker-silicon — MetaTrader 5 headless in Docker + Python rpyc bridge.
-# Runs on Apple Silicon / arm64 hosts via an x86_64 QEMU VM (Colima); see README.
+# mt5-docker-python — MetaTrader 5, headless, with a Python bridge.
 #
-# Inspired by gmag11/MetaTrader5-Docker (MIT). Differences: every runtime
-# dependency is PINNED (the upstream image breaks when mt5linux/numpy float to
-# incompatible versions), and the flaky `mt5linux` server is replaced by a tiny
-# self-contained rpyc `SlaveService` (see Metatrader/server.py) — no CLI drift.
+# The image is x86_64: MetaTrader 5 is a Windows x86 program and runs under Wine.
+# On Apple Silicon it still works, but only inside an x86_64 VM with 4 KB pages
+# (Colima) — see the README for why arm64 alone is not enough.
+#
+# Only the OS-level pieces are baked in here. MetaTrader 5, the Windows Python
+# and the pinned wheels are installed on first boot into the /config volume,
+# because a volume is empty at build time; mt5/entrypoint.sh owns that step and
+# holds the version pins.
+
 FROM ghcr.io/linuxserver/baseimage-kasmvnc:debianbookworm
 
 ARG BUILD_DATE
 ARG VERSION
-LABEL build_version="mt5-docker-silicon ${VERSION} build ${BUILD_DATE}"
-LABEL maintainer="Apeyron"
+LABEL maintainer="Gabriele Notonica"
+LABEL org.opencontainers.image.source="https://github.com/gabrielenotonica/mt5-docker-python"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.description="MetaTrader 5 headless in Docker with a Python bridge, runnable on Apple Silicon"
+LABEL build_version="mt5-docker-python ${VERSION} build ${BUILD_DATE}"
 
 ENV TITLE=MetaTrader5
-ENV WINEPREFIX="/config/.wine"
+ENV WINEPREFIX=/config/.wine
 ENV WINEDEBUG=-all
 
-# wine (stable channel) + curl/python3 for the healthcheck. The wine PREFIX lives
-# in the /config volume, so the Windows Python + MT5 + pip deps are installed at
-# first boot by start.sh (a volume is empty at build time) — but PINNED there.
+# Wine is pinned to 10.0 deliberately. On Wine 11.0 the MetaTrader 5 installer
+# aborts with "A debugger has been found running in your system" — an anti-debug
+# false positive that 10.0 does not trigger. Verified both ways in the same VM.
+ARG WINE_VERSION=10.0.0.0~bookworm-1
+
+# Base tooling: curl for the first-boot downloads, iproute2 for the healthcheck,
+# gnupg/wget to add the WineHQ repository below.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        python3 python3-pip wget curl gnupg2 software-properties-common ca-certificates iproute2 \
-    && mkdir -pm755 /etc/apt/keyrings \
+        ca-certificates \
+        curl \
+        gnupg2 \
+        iproute2 \
+        python3 \
+        python3-pip \
+        software-properties-common \
+        wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# WineHQ's own repository — Debian's Wine is too old for the terminal.
+RUN mkdir -pm755 /etc/apt/keyrings \
     && wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key \
     && wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources \
     && dpkg --add-architecture i386 \
     && apt-get update \
-    # Wine PINNED to 10.0 on purpose. Wine 11.0 (current winehq-stable) makes the
-    # MetaTrader5 installer abort with "A debugger has been found running in your
-    # system" — a MetaQuotes anti-debug false-positive that regressed on Wine 11.
-    # Verified: 10.0 installs MT5 cleanly under the same QEMU VM, 11.0 does not.
     && apt-get install --install-recommends -y \
-        winehq-stable=10.0.0.0~bookworm-1 \
-        wine-stable=10.0.0.0~bookworm-1 \
-        wine-stable-amd64=10.0.0.0~bookworm-1 \
-        wine-stable-i386=10.0.0.0~bookworm-1 \
+        "winehq-stable=${WINE_VERSION}" \
+        "wine-stable=${WINE_VERSION}" \
+        "wine-stable-amd64=${WINE_VERSION}" \
+        "wine-stable-i386=${WINE_VERSION}" \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /etc/apt/keyrings/winehq-archive.key
 
-COPY /Metatrader /Metatrader
-RUN chmod +x /Metatrader/start.sh
-COPY /root /
+COPY mt5 /mt5
+RUN chmod +x /mt5/entrypoint.sh
+
+# Drops root/defaults/autostart into place, which is what launches the entrypoint
+# inside the graphical session.
+COPY root/ /
 
 EXPOSE 3000 8001
 VOLUME /config

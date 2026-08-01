@@ -1,0 +1,15 @@
+# Build the image locally instead of pulling the published one. Use it as an
+# overlay on top of the main compose file:
+#
+#   docker compose -f docker-compose.yaml -f docker-compose.build.yaml up -d --build
+#
+# You only need this to work on the image itself; running the project does not
+# require a local build.
+services:
+  mt5:
+    build:
+      context: .
+      args:
+        VERSION: dev
+    image: mt5-docker-python:dev
+    pull_policy: build
