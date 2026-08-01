@@ -6,8 +6,8 @@ body:
     attributes:
       value: |
         Most container problems here are one of a handful of known things — the
-        [Troubleshooting](../../blob/main/README.md#troubleshooting) section covers
-        them and is usually faster than waiting for a reply.
+        [Troubleshooting](https://github.com/gabrielenotonica/mt5-docker-python#troubleshooting)
+        section covers them and is usually faster than waiting for a reply.
 
   - type: textarea
     id: what-happened
