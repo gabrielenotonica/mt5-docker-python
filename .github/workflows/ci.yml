@@ -19,14 +19,13 @@ jobs:
       - name: ShellCheck
         run: shellcheck mt5/entrypoint.sh
 
+      # The ignored rules and the reasons for them live in .hadolint.yaml, so
+      # `hadolint Dockerfile` locally gives the same answer this step does.
       - name: Hadolint
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile
-          # DL3008: we pin Wine explicitly and deliberately leave the base tooling
-          # to the Debian release; pinning every apt package here buys nothing and
-          # rots fast.
-          ignore: DL3008
+          config: .hadolint.yaml
 
       - name: Validate compose files
         run: |

@@ -1,0 +1,17 @@
+# Kept in the repo, next to .shellcheckrc, so that a local `hadolint Dockerfile`
+# gives exactly the same answer as CI. A rule silenced from the workflow file
+# instead would drift out of reach of anyone linting before they push.
+ignored:
+  # DL3008 — pin versions in apt-get install.
+  # Wine is pinned explicitly and deliberately, because the version matters (see
+  # the comment above WINE_VERSION). The base tooling is left to the Debian
+  # release: pinning curl and wget here buys nothing and rots on every point
+  # release of bookworm.
+  - DL3008
+
+  # DL3015 — avoid additional packages, use --no-install-recommends.
+  # WineHQ's own installation instructions call for --install-recommends, and
+  # they mean it: the 32-bit runtime and the graphics libraries Wine needs to
+  # put a window on screen arrive through the recommends. Installing without
+  # them produces a Wine that cannot run the terminal.
+  - DL3015

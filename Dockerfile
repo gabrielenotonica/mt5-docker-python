@@ -43,9 +43,13 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # WineHQ's own repository — Debian's Wine is too old for the terminal.
-RUN mkdir -pm755 /etc/apt/keyrings \
-    && wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key \
-    && wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources \
+# -m on mkdir -p only applies to the deepest directory, so the mode is set
+# separately rather than looking like it covers the whole path. -nv keeps wget
+# quiet about progress while still reporting a failed download.
+RUN mkdir -p /etc/apt/keyrings \
+    && chmod 755 /etc/apt/keyrings \
+    && wget -nv -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key \
+    && wget -nv -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources \
     && dpkg --add-architecture i386 \
     && apt-get update \
     && apt-get install --install-recommends -y \
