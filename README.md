@@ -64,11 +64,17 @@ Then:
 ```bash
 curl -O https://raw.githubusercontent.com/gabrielenotonica/mt5-docker-python/main/docker-compose.yaml
 curl -o .env https://raw.githubusercontent.com/gabrielenotonica/mt5-docker-python/main/.env.example
-docker compose up -d
 ```
 
-Edit `.env` first if you want a password other than the placeholder — it gates the
-local web UI.
+Now open `.env` and choose a `CUSTOM_USER` and `PASSWORD`. **You are inventing
+them here**, not looking them up: they become the login for the web UI in the
+next step, and nothing checks them against anything. The file ships with
+`trader` / `changeme` so it works untouched, which is fine on a laptop and not
+fine anywhere else.
+
+```bash
+docker compose up -d
+```
 
 The first boot downloads and installs MetaTrader, a Windows Python and the pinned
 wheels into `./config`. It takes a few minutes and happens once. Watch it with
@@ -76,9 +82,12 @@ wheels into `./config`. It takes a few minutes and happens once. Watch it with
 
 Then:
 
-1. Open **http://localhost:3000** and wait for the terminal window.
-2. Log into your account — *File → Login to Trade Account*, or open a demo. Do this
-   by hand, once; it persists.
+1. Open **http://localhost:3000**. It asks for the `CUSTOM_USER` and `PASSWORD`
+   you just set — that prompt guards the container's desktop and nothing else.
+   Wait for the terminal window to appear.
+2. Log into your **broker** account — *File → Login to Trade Account*, or open a
+   demo. These are different credentials, they go into MetaTrader rather than the
+   browser prompt, and you only do it once: the session persists in `./config`.
 3. Talk to it from Python. Your host needs a matching rpyc:
 
    ```bash
@@ -108,7 +117,7 @@ To build the image instead of pulling it:
 ```bash
 git clone https://github.com/gabrielenotonica/mt5-docker-python
 cd mt5-docker-python
-cp .env.example .env
+cp .env.example .env      # then set CUSTOM_USER / PASSWORD in it, as above
 docker compose -f docker-compose.yaml -f docker-compose.build.yaml up -d --build
 ```
 
