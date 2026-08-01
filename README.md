@@ -5,7 +5,7 @@ Silicon Mac, with no Windows and no Parallels.**
 
 [![CI](https://github.com/gabrielenotonica/mt5-docker-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gabrielenotonica/mt5-docker-python/actions/workflows/ci.yml)
 [![GHCR](https://img.shields.io/badge/ghcr.io-mt5--docker--python-blue?logo=github)](https://github.com/gabrielenotonica/mt5-docker-python/pkgs/container/mt5-docker-python)
-[![Docker Hub](https://img.shields.io/docker/pulls/gabrielenotonica/mt5-docker-python?logo=docker)](https://hub.docker.com/r/gabrielenotonica/mt5-docker-python)
+[![Docker Hub](https://img.shields.io/docker/pulls/gabrynot/mt5-docker-python?logo=docker)](https://hub.docker.com/r/gabrynot/mt5-docker-python)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 MetaTrader 5 is a Windows program. This runs it under Wine in a container and gives

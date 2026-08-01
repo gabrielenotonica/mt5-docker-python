@@ -8,7 +8,11 @@
 # To build the image yourself instead of pulling it, overlay docker-compose.build.yaml.
 services:
   mt5:
-    image: gabrielenotonica/mt5-docker-python:latest
+    # Docker Hub. The namespace is `gabrynot` while the GitHub org is
+    # `gabrielenotonica` — different accounts, not a typo. The same image is on
+    # GHCR under the GitHub name, if you prefer that registry:
+    #   ghcr.io/gabrielenotonica/mt5-docker-python:latest
+    image: gabrynot/mt5-docker-python:latest
     container_name: mt5
     platform: linux/amd64
     volumes:

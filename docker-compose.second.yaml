@@ -9,7 +9,7 @@
 # into the *second* account by hand on first start.
 services:
   mt5-2:
-    image: gabrielenotonica/mt5-docker-python:latest
+    image: gabrynot/mt5-docker-python:latest    # see the note in docker-compose.yaml
     container_name: mt5-2
     platform: linux/amd64
     volumes:
