@@ -85,7 +85,25 @@ Then:
    pip install "rpyc==6.0.2"
    ```
 
-To build the image yourself instead of pulling it:
+## Examples
+
+[examples/](examples/) has two runnable scripts for the host side:
+
+```bash
+pip install "rpyc==6.0.2" pandas
+
+python examples/fetch_candles.py EURUSD --timeframe H1 --count 500
+python examples/place_demo_order.py EURUSD --confirm     # demo accounts only
+```
+
+[fetch_candles.py](examples/fetch_candles.py) is read-only and pulls candles into
+a pandas DataFrame. [place_demo_order.py](examples/place_demo_order.py) sends one
+market order, refuses to run against anything but a demo account, and prints the
+plan without `--confirm`.
+
+## Building it yourself
+
+To build the image instead of pulling it:
 
 ```bash
 git clone https://github.com/gabrielenotonica/mt5-docker-python

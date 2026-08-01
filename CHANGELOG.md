@@ -31,6 +31,9 @@ First public release.
 - Apple Silicon support via an x86_64 QEMU VM (Colima), documented with the reason
   it is required: Wine's x86 memory manager needs 4 KB pages and the arm64 macOS
   VM uses 16 KB.
+- Two runnable host-side examples in [examples/](examples/): candles into a
+  pandas DataFrame, and a market order guarded so it will only run against a
+  demo account.
 - CI on every push and pull request (ShellCheck, Hadolint, compose validation,
   image build, boot smoke test), and tagged releases published to GHCR and
   Docker Hub.

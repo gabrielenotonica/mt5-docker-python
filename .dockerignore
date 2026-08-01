@@ -4,3 +4,4 @@ config
 .env
 *.md
 LICENSE
+examples

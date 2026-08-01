@@ -33,8 +33,11 @@ jobs:
           docker compose -f docker-compose.yaml config -q
           docker compose -f docker-compose.yaml -f docker-compose.build.yaml config -q
 
-      - name: Byte-compile the bridge
-        run: python3 -m py_compile mt5/bridge.py
+      # Neither the bridge nor the examples can be imported here — they need the
+      # Windows MetaTrader5 module, or a live container to talk to. Byte-compiling
+      # is what CI can honestly check: that nothing has a syntax error.
+      - name: Byte-compile the Python
+        run: python3 -m py_compile mt5/bridge.py examples/*.py
 
   build:
     name: Build image
