@@ -27,10 +27,18 @@ jobs:
           dockerfile: Dockerfile
           config: .hadolint.yaml
 
+      # .env is gitignored — it holds the local web UI password — so a checkout
+      # does not have one and `config` refuses to resolve env_file. Creating it
+      # the way the README tells a user to keeps that requirement intact rather
+      # than marking the file optional in compose, where a forgotten .env would
+      # silently fall back to default credentials. It also checks that
+      # .env.example is still a valid env file.
       - name: Validate compose files
         run: |
+          cp .env.example .env
           docker compose -f docker-compose.yaml config -q
           docker compose -f docker-compose.yaml -f docker-compose.build.yaml config -q
+          docker compose -f docker-compose.second.yaml config -q
 
       # Neither the bridge nor the examples can be imported here — they need the
       # Windows MetaTrader5 module, or a live container to talk to. Byte-compiling
