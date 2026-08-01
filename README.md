@@ -73,8 +73,15 @@ next step, and nothing checks them against anything. The file ships with
 fine anywhere else.
 
 ```bash
+mkdir -p config
 docker compose up -d
 ```
+
+The `mkdir` is not decoration. Left to create the bind mount itself, Docker also
+chowns it, and Colima's sshfs mount refuses that — the container never starts and
+you get `error while creating mount source path ... permission denied`. A
+directory that already exists is never chowned, so this sidesteps it. Harmless
+everywhere else.
 
 The first boot downloads and installs MetaTrader, a Windows Python and the pinned
 wheels into `./config`. It takes a few minutes and happens once. Watch it with
@@ -118,6 +125,7 @@ To build the image instead of pulling it:
 git clone https://github.com/gabrielenotonica/mt5-docker-python
 cd mt5-docker-python
 cp .env.example .env      # then set CUSTOM_USER / PASSWORD in it, as above
+mkdir -p config
 docker compose -f docker-compose.yaml -f docker-compose.build.yaml up -d --build
 ```
 
@@ -182,6 +190,12 @@ VNC on `http://localhost:3010`, bridge on `localhost:8011`. Log the new terminal
 into the second account by hand, once, the same way.
 
 ## Troubleshooting
+
+**`error while creating mount source path ...: permission denied`, and the
+container never starts.** Colima mounts your home directory over sshfs, which will
+not let Docker chown the directory it creates for the `./config` bind mount.
+Create it yourself first — `mkdir -p config` — and start again. An existing
+directory is never chowned.
 
 **`anon_mmap_fixed` assertion, or Wine dies immediately on a Mac.** You're on the
 arm64 Docker VM with 16 KB pages. Use Colima with `--arch x86_64 --vm-type=qemu`.
