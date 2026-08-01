@@ -8,7 +8,15 @@ MetaTrader or Wine.
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-07-30
+### Fixed
+
+- The Troubleshooting link in the bug report template. It used the `../../`
+  form that works in a README, but an issue template is rendered a directory
+  level deeper, so it resolved outside the repository and returned 404. GitHub
+  serves issue templates from the default branch, so this took effect without a
+  new release.
+
+## [0.1.0] - 2026-08-01
 
 First public release.
 
