@@ -22,7 +22,7 @@ jobs:
       # The ignored rules and the reasons for them live in .hadolint.yaml, so
       # `hadolint Dockerfile` locally gives the same answer this step does.
       - name: Hadolint
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: Dockerfile
           config: .hadolint.yaml
